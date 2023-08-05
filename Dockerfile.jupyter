@@ -1,0 +1,50 @@
+# Dockerfile.jupyter
+FROM python:3.10-buster
+
+RUN apt-key update \
+    apt-get install -y --no-install-recommends \
+    vim \
+    build-essential \
+    pandoc \
+    libpq-dev \
+    libjpeg-dev \
+    curl \
+    libleptonica-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libtesseract-dev \
+    zlib1g-dev \
+    libfreetype6-dev \
+    pkg-config \
+    gcc \
+    musl-dev \
+    libblas-dev \
+    liblapack-dev \
+    libffi-dev \
+    wget \
+    gnupg \
+    software-properties-common
+
+# AdoptOpenJDK for Java 8 (HotSpot)
+RUN wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add - && \
+    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ buster main" | tee /etc/apt/sources.list.d/adoptopenjdk.list && \
+    apt-get update && \
+    apt-get install -y adoptopenjdk-8-hotspot
+
+RUN pip install --upgrade pip
+RUN pip install jupyterlab pandas numpy matplotlib scipy scikit-learn pyspark==3.1.2
+
+# Create a new user: jupyter
+RUN useradd -m -s /bin/bash jupyter
+
+# Change the owner of the /home/jupyter (work directory) to jupyter
+RUN mkdir -p /home/jupyter && chown jupyter /home/jupyter
+
+# Switch to the new user
+USER jupyter
+
+# Set the working directory
+WORKDIR /home/jupyter
+
+# start the jupyter lab
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]
